@@ -976,6 +976,47 @@ microk8s dashboard-proxy
 
 **2、扩缩容**
 ```shell
-ubuntu@master:~$ kubectl scale deploy/my-dep --replicas=5 deployment.apps/my-dep scaled
+ubuntu@master:~$ kubectl scale deploy/my-dep --replicas=5 
+
+ubuntu@master:~$ kubectl edit deploy my-dep
+
 ```
 
+**3、自愈&故障转移**
+● 停机
+● 删除Pod
+● 容器崩溃
+
+
+```shell
+
+➜  ~ multipass stop node1
+
+
+ubuntu@master:~$ kubectl get pod -o wide
+NAME                      READY   STATUS        RESTARTS   AGE     IP             NODE    NOMINATED NODE   READINESS GATES
+my-dep-5b7868d854-5w8xq   1/1     Running       0          22m     10.1.104.14    node2   <none>           <none>
+my-dep-5b7868d854-525xm   1/1     Running       0          11m     10.1.104.15    node2   <none>           <none>
+my-dep-5b7868d854-f8tqv   1/1     Terminating   0          38m     10.1.166.142   node1   <none>           <none>
+my-dep-5b7868d854-t8mtf   1/1     Running       0          3m28s   10.1.104.16    node2   <none>           <none>
+
+
+ubuntu@master:~$ kubectl get pod -w
+NAME                      READY   STATUS        RESTARTS   AGE
+my-dep-5b7868d854-5w8xq   1/1     Running       0          20m
+my-dep-5b7868d854-525xm   1/1     Running       0          9m10s
+my-dep-5b7868d854-f8tqv   1/1     Terminating   0          35m
+my-dep-5b7868d854-t8mtf   1/1     Running       0          69s
+
+Every 0.1s: kubectl get pod            master: Tue Nov  2 23:18:44 2021
+
+NAME                      READY   STATUS        RESTARTS   AGE
+my-dep-5b7868d854-5w8xq   1/1     Running       0          24m
+my-dep-5b7868d854-525xm   1/1     Running       0          12m
+my-dep-5b7868d854-f8tqv   1/1     Terminating   0          39m
+my-dep-5b7868d854-t8mtf   1/1     Running       0          4m52s
+
+
+
+
+```
