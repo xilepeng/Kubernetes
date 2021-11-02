@@ -121,56 +121,6 @@ ubuntu@master:~$
 
 
 
-**Ubuntu 安装 Docker**
-
-
-
-```shell
-# 使用官方安装脚本自动安装
-ubuntu@master:~$ curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
-
-ubuntu@master:~$ docker images
-Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get "http://%2Fvar%2Frun%2Fdocker.sock/v1.24/images/json": dial unix /var/run/docker.sock: connect: permission denied
-
-ubuntu@master:~$ sudo groupadd docker
-groupadd: group 'docker' already exists
-ubuntu@master:~$ sudo gpasswd -a ubuntu docker
-Adding user ubuntu to group docker
-ubuntu@master:~$ sudo service docker restart
-ubuntu@master:~$ sudo vim /etc/docker/daemon.json
-
-{ "registry-mirrors": [
-    "https://hkaofvr0.mirror.aliyuncs.com"
-  ]
- }
-
-ubuntu@master:~$ sudo systemctl daemon-reload
-ubuntu@master:~$ sudo systemctl restart docker
-# 重启 iTerm2
-ubuntu@node1:~$ exit
-logout
-➜  ~ multipass shell node1
-
-ubuntu@master:~$ docker info
-
- Registry Mirrors:
-  https://hkaofvr0.mirror.aliyuncs.com/
-
-# Install Compose on Linux systems
-
-sudo apt install docker-compose -y
-
-ubuntu@master:~$ sudo curl -L "https://github.com/docker/compose/releases/download/v2.0.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-
-ubuntu@master:~$ sudo chmod +x /usr/local/bin/docker-compose
-ubuntu@master:~$ sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-ubuntu@master:~$ docker-compose --version
-
-Docker Compose version v2.0.1
-
-
-```
-
 
 
 
@@ -736,13 +686,295 @@ spec:
 
 
 
+```shell
+ubuntu@master:~$ kubectl get ns
+NAME              STATUS   AGE
+kube-system       Active   18h
+kube-public       Active   18h
+kube-node-lease   Active   18h
+default           Active   18h
+
+ubuntu@master:~$ kubectl create ns hello
+ubuntu@master:~$ kubectl get ns
+NAME              STATUS   AGE
+kube-system       Active   18h
+kube-public       Active   18h
+kube-node-lease   Active   18h
+default           Active   18h
+hello             Active   6m55s
+ubuntu@master:~$ kubectl delete ns hello
+namespace "hello" deleted
+
+
+ubuntu@master:~$ vim hello.yaml
+ubuntu@master:~$ cat hello.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+        name: hello
+ubuntu@master:~$ kubectl apply -f hello.yaml
+namespace/hello created
+ubuntu@master:~$ kubectl get ns
+NAME              STATUS   AGE
+kube-system       Active   18h
+kube-public       Active   18h
+kube-node-lease   Active   18h
+default           Active   18h
+hello             Active   18s
+ubuntu@master:~$ kubectl delete -f hello.yaml
+namespace "hello" deleted
 
 
 
 
 
+ubuntu@master:~$ kubectl run mynginx --image=nginx
+pod/mynginx created
+ubuntu@master:~$ kubectl get pod
+NAME      READY   STATUS              RESTARTS   AGE
+mynginx   0/1     ContainerCreating   0          15s
+
+ubuntu@master:~$ kubectl get pod
+NAME      READY   STATUS    RESTARTS   AGE
+mynginx   1/1     Running   0          64s
+
+ubuntu@master:~$ kubectl describe pod mynginx
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  104s  default-scheduler  Successfully assigned default/mynginx to node1
+  Normal  Pulling    95s   kubelet            Pulling image "nginx"
+  Normal  Pulled     47s   kubelet            Successfully pulled image "nginx" in 47.467731986s
+  Normal  Created    45s   kubelet            Created container mynginx
+  Normal  Started    45s   kubelet            Started container mynginx
+
+ubuntu@master:~$ kubectl get pod -o wide
+NAME      READY   STATUS    RESTARTS   AGE    IP             NODE    NOMINATED NODE   READINESS GATES
+mynginx   1/1     Running   0          5m4s   10.1.166.129   node1   <none>           <none>
+
+
+ubuntu@master:~$ kubectl delete pod mynginx
+pod "mynginx" deleted
+
+ubuntu@master:~$ vim nginx.yaml
+ubuntu@master:~$ cat nginx.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: mynginx
+  name: mynginx
+#  namespace: default
+spec:
+  containers:
+  - image: nginx
+    name: mynginx
+ubuntu@master:~$ kubectl apply -f nginx.yaml
+pod/mynginx created
+
+
+ubuntu@master:~$ kubectl get pod -o wide
+NAME      READY   STATUS    RESTARTS   AGE   IP             NODE    NOMINATED NODE   READINESS GATES
+mynginx   1/1     Running   0          40s   10.1.166.130   node1   <none>           <none>
+
+
+ubuntu@master:~$ kubectl delete -f nginx.yaml
+pod "mynginx" deleted
+
+
+
+ubuntu@node2:~$ kubectl logs mynginx
+
+ubuntu@node2:~$ kubectl logs -f mynginx
+
+
+
+ubuntu@master:~$ kubectl get pod -o wide
+NAME      READY   STATUS    RESTARTS   AGE   IP           NODE    NOMINATED NODE   READINESS GATES
+mynginx   1/1     Running   0          30m   10.1.104.1   node2   <none>           <none>
+ubuntu@master:~$ curl 10.1.104.1
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
 
 
 
 
+
+ubuntu@node2:~$ kubectl exec -it mynginx -- /bin/bash
+root@mynginx:/# ls
+bin   dev		   docker-entrypoint.sh  home  lib64  mnt  proc  run   srv  tmp  var
+boot  docker-entrypoint.d  etc			 lib   media  opt  root  sbin  sys  usr
+root@mynginx:/# cd /usr/share/nginx/html/
+root@mynginx:/usr/share/nginx/html# ls
+50x.html  index.html
+root@mynginx:/usr/share/nginx/html# echo "01" > index.html
+root@mynginx:/usr/share/nginx/html# exit
+exit
+ubuntu@node2:~$ kubectl get pod
+NAME      READY   STATUS    RESTARTS   AGE
+mynginx   1/1     Running   0          39m
+ubuntu@node2:~$ kubectl get pod -owide
+NAME      READY   STATUS    RESTARTS   AGE   IP           NODE    NOMINATED NODE   READINESS GATES
+mynginx   1/1     Running   0          39m   10.1.104.1   node2   <none>           <none>
+ubuntu@node2:~$ curl 10.1.104.1
+01
+
+
+
+
+
+ubuntu@master:~$ vim multicontainer-pod.yaml
+ubuntu@master:~$ cat multicontainer-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: myapp
+  name: myapp
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+  - image: tomcat:8.5.68
+    name: tomcat
+ubuntu@master:~$ kubectl apply -f multicontainer-pod.yaml
+pod/myapp created
+ubuntu@master:~$ kubectl get pod
+NAME      READY   STATUS              RESTARTS   AGE
+mynginx   1/1     Running             0          46m
+myapp     0/2     ContainerCreating   0          9s
+
+
+ubuntu@master:~$ kubectl delete pod --all
+pod "mynginx" deleted
+pod "myapp" deleted
+
+```
+
+
+
+
+**4、Deployment**
+
+控制Pod，使Pod拥有多副本，自愈，扩缩容等能力
+
+```shell
+ubuntu@master:~$ kubectl create deployment mynginx --image=nginx
+deployment.apps/mynginx created
+
+ubuntu@master:~$ kubectl get pod
+NAME                       READY   STATUS    RESTARTS   AGE
+mynginx-5b686ccd46-xjx8p   1/1     Running   0          96s
+
+
+# 启动新master 监听
+ubuntu@master:~$ watch -n -1 kubectl get pod
+
+Every 0.1s: kubectl get pod    master: Tue Nov  2 20:08:52 2021
+
+NAME                       READY   STATUS    RESTARTS   AGE
+mynginx-5b686ccd46-xjx8p   1/1     Running   0          2m3s
+
+
+ubuntu@master:~$ kubectl delete pod mynginx-5b686ccd46-xjx8p
+pod "mynginx-5b686ccd46-xjx8p" deleted
+
+
+Every 0.1s: kubectl get pod    master: Tue Nov  2 20:09:39 2021
+
+NAME                       READY   STATUS              RESTARTS
+   AGE
+mynginx-5b686ccd46-xjx8p   1/1     Terminating         0
+   2m49s
+mynginx-5b686ccd46-r9vf6   0/1     ContainerCreating   0
+   3s
+
+
+Every 0.1s: kubectl get pod    master: Tue Nov  2 20:10:01 2021
+
+NAME                       READY   STATUS    RESTARTS   AGE
+mynginx-5b686ccd46-r9vf6   1/1     Running   0          25s
+
+
+
+
+
+ubuntu@master:~$ kubectl get pod
+NAME                       READY   STATUS    RESTARTS   AGE
+mynginx-5b686ccd46-r9vf6   1/1     Running   0          3m24s
+ubuntu@master:~$ kubectl get deployments.apps
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+mynginx   1/1     1            1           8m47s
+ubuntu@master:~$ kubectl get deploy
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+mynginx   1/1     1            1           9m3s
+
+ubuntu@master:~$ kubectl delete deploy mynginx
+deployment.apps "mynginx" deleted
+
+
+ Every 0.1s: kubectl get pod    master: Tue Nov  2 20:15:55 2021
+
+No resources found in default namespace.
+
+
+```
+
+
+
+**1、多副本**
+
+```shell
+ubuntu@master:~$ kubectl create deployment my-dep --image=nginx --replicas=3
+deployment.apps/my-dep created
+ubuntu@master:~$ kubectl get deploy
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+my-dep   3/3     3            3           33s
+
+
+
+
+# 启动新master 监听
+ubuntu@master:~$ watch -n -1 kubectl get pod
+
+Every 0.1s: kubectl get pod    master: Tue Nov  2 20:21:45 2021
+
+NAME                      READY   STATUS    RESTARTS   AGE
+my-dep-5b7868d854-6prsj   1/1     Running   0          2m5s
+my-dep-5b7868d854-d4vtc   1/1     Running   0          2m5s
+my-dep-5b7868d854-fjrnz   1/1     Running   0          2m5s
+
+
+```
+
+
+**访问Kubernetes仪表板**
+```shell
+microk8s dashboard-proxy
+
+
+
+
+```
 

@@ -1,6 +1,59 @@
 
 
 
+
+**Ubuntu 安装 Docker**
+
+
+
+```shell
+# 使用官方安装脚本自动安装
+ubuntu@master:~$ curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+
+ubuntu@master:~$ docker images
+Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get "http://%2Fvar%2Frun%2Fdocker.sock/v1.24/images/json": dial unix /var/run/docker.sock: connect: permission denied
+
+ubuntu@master:~$ sudo groupadd docker
+groupadd: group 'docker' already exists
+ubuntu@master:~$ sudo gpasswd -a ubuntu docker
+Adding user ubuntu to group docker
+ubuntu@master:~$ sudo service docker restart
+ubuntu@master:~$ sudo vim /etc/docker/daemon.json
+
+{ "registry-mirrors": [
+    "https://hkaofvr0.mirror.aliyuncs.com"
+  ]
+ }
+
+ubuntu@master:~$ sudo systemctl daemon-reload
+ubuntu@master:~$ sudo systemctl restart docker
+# 重启 iTerm2
+ubuntu@node1:~$ exit
+logout
+➜  ~ multipass shell node1
+
+ubuntu@master:~$ docker info
+
+ Registry Mirrors:
+  https://hkaofvr0.mirror.aliyuncs.com/
+
+# Install Compose on Linux systems
+
+sudo apt install docker-compose -y
+
+ubuntu@master:~$ sudo curl -L "https://github.com/docker/compose/releases/download/v2.0.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+ubuntu@master:~$ sudo chmod +x /usr/local/bin/docker-compose
+ubuntu@master:~$ sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+ubuntu@master:~$ docker-compose --version
+
+Docker Compose version v2.0.1
+
+
+```
+
+
+
 ```bash
 
 一、Multipass介绍
