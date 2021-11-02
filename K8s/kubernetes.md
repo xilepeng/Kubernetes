@@ -972,9 +972,10 @@ my-dep-5b7868d854-fjrnz   1/1     Running   0          2m5s
 **访问Kubernetes仪表板**
 ```shell
 microk8s dashboard-proxy
+```
 
-
-
-
+**2、扩缩容**
+```shell
+ubuntu@master:~$ kubectl scale deploy/my-dep --replicas=5 deployment.apps/my-dep scaled
 ```
 
