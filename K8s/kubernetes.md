@@ -221,7 +221,7 @@ ubuntu@master:~$ microk8s.stop && microk8s.start
 
 sudo snap alias microk8s.kubectl kubectl
 
-sudo snap alias microk8s.kubectl microk8s.kubectl
+
 
 
 
@@ -322,15 +322,7 @@ Events:
   Normal   Pulling    94s (x3 over 3m25s)    kubelet            Pulling image "k8s.gcr.io/metrics-server/metrics-server:v0.5.0"
 ```
 
-```shell
-好像不好用
-由于网络问题会导致相关镜像下载失败，我们通常会使用VPN进行镜像下载，这里提供一个无需VPN的配置方式，
-在/etc/hosts中添加以下内容：
 
-sudo vim /etc/hosts
-
-172.217.197.82   k8s.gcr.io
-```
 
 
 ```shell
@@ -684,7 +676,9 @@ spec:
 
 
 
+## 2、Namespace
 
+名称空间用来隔离资源
 
 ```shell
 ubuntu@master:~$ kubectl get ns
@@ -723,10 +717,14 @@ default           Active   18h
 hello             Active   18s
 ubuntu@master:~$ kubectl delete -f hello.yaml
 namespace "hello" deleted
+```
 
 
+## 3、Pod
 
+运行中的一组容器，Pod是kubernetes中应用的最小单位.
 
+```shell
 
 ubuntu@master:~$ kubectl run mynginx --image=nginx
 pod/mynginx created
@@ -875,7 +873,7 @@ pod "myapp" deleted
 
 
 
-**4、Deployment**
+## 4、Deployment
 
 控制Pod，使Pod拥有多副本，自愈，扩缩容等能力
 
@@ -1018,5 +1016,329 @@ my-dep-5b7868d854-t8mtf   1/1     Running       0          4m52s
 
 
 
+ubuntu@master:~$ kubectl get pod -o wide
+NAME                      READY   STATUS    RESTARTS   AGE   IP            NODE    NOMINATED NODE   READINESS GATESmy-dep-5b7868d854-5w8xq   1/1     Running   0          35m   10.1.104.14   node2   <none>           <none>
+my-dep-5b7868d854-525xm   1/1     Running   0          23m   10.1.104.15   node2   <none>           <none>
+my-dep-5b7868d854-t8mtf   1/1     Running   0          15m   10.1.104.16   node2   <none>           <none>
+
 
 ```
+
+
+**4、滚动更新**
+
+```shell
+
+ubuntu@master:~$ kubectl get deploy -oyaml
+
+ubuntu@master:~$ watch -n 1 kubectl get pod
+
+ubuntu@master:~$ kubectl get pod -w
+NAME                      READY   STATUS    RESTARTS      AGE
+my-dep-5b7868d854-t8mtf   1/1     Running   1 (36m ago)   7h14m
+my-dep-5b7868d854-525xm   1/1     Running   1 (36m ago)   7h22m
+my-dep-5b7868d854-5w8xq   1/1     Running   1 (36m ago)
+
+ubuntu@master:~$ kubectl set image deploy/my-dep nginx=nginx:1.16.1 --record
+Flag --record has been deprecated, --record will be removed in the future
+
+
+ubuntu@master:~$ kubectl get pod -w
+NAME                      READY   STATUS    RESTARTS      AGE
+my-dep-5b7868d854-t8mtf   1/1     Running   1 (36m ago)   7h14m
+my-dep-5b7868d854-525xm   1/1     Running   1 (36m ago)   7h22m
+my-dep-5b7868d854-5w8xq   1/1     Running   1 (36m ago)   7h33m
+my-dep-6b48cbf4f9-l66rj   0/1     Pending   0             0s
+my-dep-6b48cbf4f9-l66rj   0/1     Pending   0             0s
+my-dep-6b48cbf4f9-l66rj   0/1     ContainerCreating   0             0s
+my-dep-6b48cbf4f9-l66rj   0/1     ContainerCreating   0
+
+
+
+# 修改 kubectl edit deployment/my-dep
+
+```
+
+
+**5、版本回退**
+
+```shell
+ubuntu@master:~$ kubectl rollout history deployment/my-dep
+
+deployment.apps/my-dep
+REVISION  CHANGE-CAUSE
+1         <none>
+2         kubectl set image deploy/my-dep nginx=nginx:1.16.1 --record=true
+
+
+ubuntu@master:~$ kubectl rollout undo deploy/my-dep --to-revision=1
+
+deployment.apps/my-dep rolled back
+
+
+ubuntu@master:~$ kubectl get deploy/my-dep -oyaml|grep image
+
+      - image: nginx
+        imagePullPolicy: Always
+
+
+
+```
+更多：
+除了Deployment，k8s还有 StatefulSet 、DaemonSet 、Job  等 类型资源。我们都称为 工作负载。
+有状态应用使用  StatefulSet  部署，无状态应用使用 Deployment 部署
+
+
+
+
+## 5、Service
+
+将一组 Pods 公开为网络服务的抽象方法。
+
+```shell
+
+ubuntu@master:~$ kubectl expose deployment my-dep --port=8000 --target-port=80
+service/my-dep exposed
+
+ubuntu@master:~$ kubectl get service
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+kubernetes   ClusterIP   10.152.183.1    <none>        443/TCP    32h
+my-dep       ClusterIP   10.152.183.14   <none>        8000/TCP   41s
+
+
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: my-dep
+  name: my-dep
+spec:
+  selector:
+    app: my-dep
+  ports:
+  - port: 8000
+    protocol: TCP
+    targetPort: 80
+
+
+#  集群内任意访问
+
+ubuntu@master:~$ curl 10.152.183.14:8000
+222
+ubuntu@master:~$ curl 10.152.183.14:8000
+333
+ubuntu@master:~$ curl 10.152.183.14:8000
+111
+
+
+
+
+ubuntu@master:~$ kubectl get pod --show-labels
+NAME                      READY   STATUS    RESTARTS   AGE   LABELS
+my-dep-5b7868d854-h6nk4   1/1     Running   0          40m   app=my-dep,pod-template-hash=5b7868d854
+my-dep-5b7868d854-nsf5s   1/1     Running   0          40m   app=my-dep,pod-template-hash=5b7868d854
+my-dep-5b7868d854-blggv   1/1     Running   0          39m   app=my-dep,pod-template-hash=5b7868d854
+
+
+
+```
+
+
+**1、ClusterIP**
+
+```shell
+
+# 等同于没有--type的
+kubectl expose deployment my-dep --port=8000 --target-port=80 --type=ClusterIP
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: my-dep
+  name: my-dep
+spec:
+  ports:
+  - port: 8000
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: my-dep
+  type: ClusterIP
+```
+
+
+**2、NodePort 集群外也可以访问**
+
+```shell
+
+ubuntu@master:~$ kubectl get svc
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+kubernetes   ClusterIP   10.152.183.1    <none>        443/TCP    33h
+my-dep       ClusterIP   10.152.183.14   <none>        8000/TCP   61m
+ubuntu@master:~$ kubectl get service
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+kubernetes   ClusterIP   10.152.183.1    <none>        443/TCP    33h
+my-dep       ClusterIP   10.152.183.14   <none>        8000/TCP   61m
+ubuntu@master:~$ kubectl delete service my-dep
+service "my-dep" deleted
+
+ubuntu@master:~$ kubectl expose deploy my-dep --port=8000 --target-port=80 --type=NodePort
+service/my-dep exposed
+
+ubuntu@master:~$ kubectl get svc
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+kubernetes   ClusterIP   10.152.183.1    <none>        443/TCP          33h
+my-dep       NodePort    10.152.183.39   <none>        8000:30689/TCP   37s
+
+
+
+➜  ~ multipass ls
+Name                    State             IPv4             Image
+master                  Running           192.168.105.5    Ubuntu 20.04 LTS
+                                          172.17.0.1
+                                          10.1.219.64
+node1                   Running           192.168.105.6    Ubuntu 20.04 LTS
+                                          172.17.0.1
+                                          10.1.166.128
+node2                   Running           192.168.105.7    Ubuntu 20.04 LTS
+                                          172.17.0.1
+                                          10.1.104.0
+
+
+# 外网访问
+http://192.168.105.5:30689/
+http://192.168.105.6:30689/
+http://192.168.105.7:30689/
+
+```
+
+
+```shell
+kubectl expose deployment my-dep --port=8000 --target-port=80 --type=NodePort
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: my-dep
+  name: my-dep
+spec:
+  ports:
+  - port: 8000
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: my-dep
+  type: NodePort
+
+```
+NodePort范围在 30000-32767 之间
+
+
+
+
+
+
+## 6、Ingress
+
+
+
+```shell
+
+ubuntu@master:~$ microk8s enable ingress
+
+
+
+ubuntu@master:~$ microk8s.kubectl get pods --all-namespaces
+
+ubuntu@master:~$ kubectl get pod -A
+
+ingress       nginx-ingress-microk8s-controller-5zvc7      0/1     ImagePullBackOff   0               3m7s
+ingress       nginx-ingress-microk8s-controller-xl7vh      0/1     ErrImagePull       0               3m7s
+ingress       nginx-ingress-microk8s-controller-6hsvd      0/1     ErrImagePull       0               3m7s
+
+Back-off pulling image "k8s.gcr.io/ingress-nginx/controller:v1.0.0-alpha.2"
+
+ubuntu@master:~$ kubectl describe pods nginx-ingress-microk8s-controller -n ingress
+Name:         nginx-ingress-microk8s-controller-5zvc7
+Namespace:    ingress
+Priority:     0
+Node:         node2/192.168.105.7
+Start Time:   Wed, 03 Nov 2021 09:10:06 +0800
+Labels:       controller-revision-hash=7d5964757d
+              name=nginx-ingress-microk8s
+              pod-template-generation=1
+Annotations:  cni.projectcalico.org/podIP: 10.1.104.23/32
+              cni.projectcalico.org/podIPs: 10.1.104.23/32
+Status:       Pending
+IP:           10.1.104.23
+IPs:
+  IP:           10.1.104.23
+Controlled By:  DaemonSet/nginx-ingress-microk8s-controller
+Containers:
+  nginx-ingress-microk8s:
+    Container ID:
+    Image:         k8s.gcr.io/ingress-nginx/controller:v1.0.0-alpha.2
+
+
+```
+
+
+
+```shell
+
+ubuntu@master:~$ docker pull willdockerhub/ingress-nginx-controller:v1.0.0
+
+ubuntu@master:~$ docker tag willdockerhub/ingress-nginx-controller:v1.0.0   k8s.gcr.io/nginx-ingress-microk8s-controller:v1.0.0-alpha.2
+ubuntu@master:~$ docker images
+REPOSITORY                               TAG              IMAGE ID       CREATED        SIZE
+k8s.gcr.io/ingress-nginx/controller      v1.0.0-alpha.2   ef43679c2cae   2 months ago   283MB
+willdockerhub/ingress-nginx-controller   v1.0.0           ef43679c2cae   2 months ago   283MB
+
+
+
+
+
+ubuntu@master:~$ docker pull jettech/kube-webhook-certgen:v1.0.0
+
+docker tag jettech/kube-webhook-certgen:v1.0.0 k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.0.0
+
+
+
+
+docker pull jettech/kube-webhook-certgen:v1.0.0
+
+
+
+kubectl set image -n ingress deployment/nginx-ingress-microk8s-controller nginx-ingress-microk8s-controller=harbor-ali.ejoyst.com/k8s_img/nginx-ingress-controller:v1.0.0
+
+# controller镜像对应地址
+	image: k8s.gcr.io/ingress-nginx/controller:v1.0.0  -> https://hub.docker.com/r/willdockerhub/ingress-nginx-controller
+	docker pull willdockerhub/ingress-nginx-controller:v1.0.0
+	
+	image: k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.0 -> https://hub.docker.com/r/jettech/kube-webhook-certgen/tags
+	docker pull jettech/kube-webhook-certgen:v1.0.0
+
+
+
+
+
+
+```
+
+
+
+
+
+
+microk8s.enable dashboard dns ingress istio registry storage
+
+
+
+microk8s.stop && microk8s.start
+
+sudo systemctl restart docker
