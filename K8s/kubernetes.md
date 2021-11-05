@@ -1285,43 +1285,173 @@ Containers:
     Image:         k8s.gcr.io/ingress-nginx/controller:v1.0.0-alpha.2
 
 
+
+
+
+registry.cn-hangzhou.aliyuncs.com/hfbpw/nginx-ingress-microk8s-controller:v1.0.0-alpha.2
+
+registry.cn-hangzhou.aliyuncs.com/hfbpw/kube-webhook-certgen:v1.1.1
+
+
+registry.cn-hangzhou.aliyuncs.com/hfbpw/nginx-ingress-microk8s-controller
+registry.cn-hangzhou.aliyuncs.com/hfbpw/kube-webhook-certgen
+
+registry-internal.cn-hangzhou.aliyuncs.com/hfbpw/nginx-ingress-microk8s-controller
+registry-internal.cn-hangzhou.aliyuncs.com/hfbpw/kube-webhook-certgen
+
+
+
+kubectl set image -n ingress /hfbpw/nginx-ingress-microk8s-controller nginx-ingress-microk8s-controller=registry.cn-hangzhou.aliyuncs.com/hfbpw/nginx-ingress-microk8s-controller:v1.0.0-alpha.2
+
+
+kubectl set image -n ingress deployment/nginx-ingress-microk8s nginx-ingress-microk8s=registry.cn-hangzhou.aliyuncs.com/hfbpw/nginx-ingress-microk8s-controller
+
+
+
+kubectl set image -n ingress deployment/kube-webhook-certgen kube-webhook-certgen=registry.cn-hangzhou.aliyuncs.com/hfbpw/kube-webhook-certgen
+
+
+
+
+
+
+
 ```
 
 
 
 ```shell
 
-ubuntu@master:~$ docker pull willdockerhub/ingress-nginx-controller:v1.0.0
-
-ubuntu@master:~$ docker tag willdockerhub/ingress-nginx-controller:v1.0.0   k8s.gcr.io/nginx-ingress-microk8s-controller:v1.0.0-alpha.2
-ubuntu@master:~$ docker images
-REPOSITORY                               TAG              IMAGE ID       CREATED        SIZE
-k8s.gcr.io/ingress-nginx/controller      v1.0.0-alpha.2   ef43679c2cae   2 months ago   283MB
-willdockerhub/ingress-nginx-controller   v1.0.0           ef43679c2cae   2 months ago   283MB
+3. 将镜像推送到Registry
 
 
 
 
 
-ubuntu@master:~$ docker pull jettech/kube-webhook-certgen:v1.0.0
+$ docker login --username=你那个面试咋样啊 registry.cn-hangzhou.aliyuncs.com
 
-docker tag jettech/kube-webhook-certgen:v1.0.0 k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.0.0
-
-
-
-
-docker pull jettech/kube-webhook-certgen:v1.0.0
+$ docker tag 2b2a6487f032 registry.cn-hangzhou.aliyuncs.com/hfbpw/nginx-ingress-microk8s-controller:v1.0.0-alpha.2
+$ docker push registry.cn-hangzhou.aliyuncs.com/hfbpw/nginx-ingress-microk8s-controller:v1.0.0-alpha.2
 
 
 
-kubectl set image -n ingress deployment/nginx-ingress-microk8s-controller nginx-ingress-microk8s-controller=harbor-ali.ejoyst.com/k8s_img/nginx-ingress-controller:v1.0.0
 
-# controller镜像对应地址
-	image: k8s.gcr.io/ingress-nginx/controller:v1.0.0  -> https://hub.docker.com/r/willdockerhub/ingress-nginx-controller
-	docker pull willdockerhub/ingress-nginx-controller:v1.0.0
-	
-	image: k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.0 -> https://hub.docker.com/r/jettech/kube-webhook-certgen/tags
-	docker pull jettech/kube-webhook-certgen:v1.0.0
+
+
+kubectl set image -n ingress deployment/nginx-ingress-microk8s-controller nginx-ingress-microk8s-controller=registry.cn-hangzhou.aliyuncs.com/hfbpw/nginx-ingress-microk8s-controller:v1.0.0-alpha.2
+
+ kubectl create deployment nginx-ingress-microk8s-controller  --image=xilepeng/nginx-ingress-microk8s-controller:v1.0.0-alpha.2 --namespace=ingress
+
+
+
+ubuntu@master:~$  kubectl create deployment nginx-ingress-microk8s-controller  --image=xilepeng/nginx-ingress-microk8s-controller:v1.0.0-alpha.2 --namespace=ingress
+deployment.apps/nginx-ingress-microk8s-controller created
+
+
+
+
+
+
+kubectl set image -n ingress deployment/kube-webhook-certgen kube-webhook-certgen=registry.cn-hangzhou.aliyuncs.com/hfbpw/kube-webhook-certgen:v1.1.1
+
+
+
+ubuntu@master:~$ kubectl create ns ingress
+
+ubuntu@master:~$ kubectl create deployment nginx-ingress-microk8s-controller --image=wangshun1024/ingress-nginx-controller:v1.0.0-alpha.2 --namespace=ingress
+
+
+
+
+
+ubuntu@master:~$ docker pull wangshun1024/ingress-nginx-controller:v1.0.0-alpha.2
+
+docker tag wangshun1024/ingress-nginx-controller:v1.0.0-alpha.2 k8s.gcr.io/ingress-nginx/controller:v1.0.0-alpha.2
+
+
+
+
+ubuntu@node2:~$ docker pull wangshun1024/kube-webhook-certgen:v1.1.1
+
+k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.1.1
+
+
+
+
+
+
+
+$ docker tag c41e9fcadf5a registry.cn-hangzhou.aliyuncs.com/hfbpw/kube-webhook-certgen:v1.1.1
+$ docker push registry.cn-hangzhou.aliyuncs.com/hfbpw/kube-webhook-certgen:v1.1.1
+
+
+
+
+
+
+$ docker tag c41e9fcadf5a registry.cn-hangzhou.aliyuncs.com/hfbpw/kube-webhook-certgen:v1.1.1
+$ docker push registry.cn-hangzhou.aliyuncs.com/hfbpw/kube-webhook-certgen:v1.1.1
+```
+
+
+microk8s.enable dashboard dns ingress istio registry storage
+
+
+microk8s.stop && microk8s.start
+
+sudo systemctl restart docker
+
+
+microk8s.enable ingress istio registry storage
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```shell
+
+ubuntu@master:~$ kubectl create deployment web --image=nginx
+deployment.apps/web created
+ubuntu@master:~$ kubectl get deployments.apps
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+web    1/1     1            1           32s
+ubuntu@master:~$ kubectl expose deployment web --port=80 --target-port=80 --type=NodePort
+service/web exposed
+
+ubuntu@master:~$ kubectl get service
+NAME         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
+kubernetes   ClusterIP   10.152.183.1     <none>        443/TCP        22h
+web          NodePort    10.152.183.249   <none>        80:32705/TCP   64s
+
+浏览器访问：http://192.168.105.5:32705
+
+Welcome to nginx!
+
+If you see this page, the nginx web server is successfully installed and working. Further configuration is required.
+
+For online documentation and support please refer to nginx.org.
+Commercial support is available at nginx.com.
+
+Thank you for using nginx.
+
+
+
+
 
 
 
@@ -1335,10 +1465,64 @@ kubectl set image -n ingress deployment/nginx-ingress-microk8s-controller nginx-
 
 
 
-microk8s.enable dashboard dns ingress istio registry storage
 
 
 
-microk8s.stop && microk8s.start
 
-sudo systemctl restart docker
+
+
+
+
+
+
+
+
+
+```shell
+ubuntu@master:~$ microk8s helm3 repo add aliyuncs https://apphub.aliyuncs.com
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /var/snap/microk8s/2551/credentials/client.config
+"aliyuncs" has been added to your repositories
+
+
+设置helm别名：
+
+sudo snap alias microk8s.helm3 helm
+
+ubuntu@master:~$ sudo snap alias microk8s.helm helm
+Added:
+  - microk8s.helm as helm
+
+ubuntu@master:~$ sudo snap alias microk8s.helm3 helm
+
+
+
+ubuntu@master:~$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /var/snap/microk8s/2551/credentials/client.config
+"ingress-nginx" has been added to your repositories
+ubuntu@master:~$  helm repo update
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /var/snap/microk8s/2551/credentials/client.config
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "ingress-nginx" chart repository
+...Successfully got an update from the "aliyuncs" chart repository
+Update Complete. ⎈Happy Helming!⎈
+
+
+ubuntu@master:~$ helm search repo nginx-ingress
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /var/snap/microk8s/2551/credentials/client.config
+NAME                             	CHART VERSION	APP VERSION	DESCRIPTION
+aliyuncs/nginx-ingress           	1.30.3       	0.28.0     	An nginx Ingress controller that uses ConfigMap...
+aliyuncs/nginx-ingress-controller	5.3.4        	0.29.0     	Chart for the nginx Ingress controller
+aliyuncs/nginx-lego              	0.3.1        	           	Chart for nginx-ingress-controller and kube-lego
+
+
+
+
+
+
+```
+
+
+
+
+
+

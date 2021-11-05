@@ -322,7 +322,7 @@ spec:
       dnsPolicy: ClusterFirst
       containers:
         - name: controller
-          image: registry-internal.cn-hangzhou.aliyuncs.com/hfbpw/nginx-ingress-microk8s-controller
+          image: docker.io/wangshun1024/ingress-nginx-controller:v1.0.0-alpha.2
           imagePullPolicy: IfNotPresent
           lifecycle:
             preStop:
@@ -603,8 +603,8 @@ spec:
         app.kubernetes.io/component: admission-webhook
     spec:
       containers:
-        - name: create       
-          image: registry-internal.cn-hangzhou.aliyuncs.com/hfbpw/kube-webhook-certgen
+        - name: create
+          image: docker.io/wangshun1024/kube-webhook-certgen:v1.1.1
           imagePullPolicy: IfNotPresent
           args:
             - create
@@ -654,7 +654,7 @@ spec:
     spec:
       containers:
         - name: patch
-          image: registry-internal.cn-hangzhou.aliyuncs.com/hfbpw/kube-webhook-certgen
+          image: docker.io/wangshun1024/kube-webhook-certgen:v1.1.1
           imagePullPolicy: IfNotPresent
           args:
             - patch

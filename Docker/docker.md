@@ -124,8 +124,8 @@ multipass stop ubuntu-lts
  
 12.宿主机挂载虚拟机
 语法：multipass mount 宿主机目录 虚拟机名称：虚拟机目录
-multipass mount /mnt ubuntu-python
-multipass mount /mnt ubuntu-python:/mnt
+multipass mount /mnt master
+multipass mount /mnt master:/mnt
  
 13.宿主机卸载虚拟机
 语法：multipass unmount 虚拟机名称
